@@ -73,13 +73,6 @@ con <- dbConnect(
 LSN_data <- dbGetQuery(con,
                        "SELECT * FROM prd_dash_lab.seda_unrestricted.ard_lsn_tbl_sample_wims")
 
-
-LSN_data_filtered <- LSN_data %>%
-  dplyr::select(
-    suite_type,
-    det_desc,
-    network_id)
-
 LSN_data_filtered <- LSN_data %>%
   filter(
     startsWith(suite_type, param$st),
