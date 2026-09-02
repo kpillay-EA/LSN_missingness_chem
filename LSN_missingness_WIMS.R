@@ -36,7 +36,7 @@ source("missing_data_functions.r")
 #fnn = 
 #years = sampling years
 
-param <- list(st="LS", dc="Ammoniacal Nitrogen, Filtered as N", fn="lsn_wims_", fnn="Nitrogen", years=2026)
+param <- list(st="LS", dc="Ammoniacal Nitrogen, Filtered as N", fn="lsn_wims_", fnn="Nitrogen", years=2024:2025)
 
 ## Site data
 # Filter on network, and on design years
@@ -221,6 +221,129 @@ LSN_data_filtered[LSN_sites_filtered, on = "network_id",
             replacement_site_flag = i.replacement_site_flag)]
 
 ###################################
+### Sites planned to visit, but no data will not show in database.
+# Need to cross check these against panel and sites.
+
+panel_table <- LSN_panel_filtered_long_filtered[, .(panel, panel_year)] |> table() |> as.data.table()
+names(panel_table)[names(panel_table) == "panel"] <- "panel_name"
+
+# Get unique panel names
+panel <- panel_table[, panel_name] |> unique()
 
 
+#because i dont have current panel column, it is just panel and none of the sites have been rejected
+# Get sites for each panel
+LSN_panel_filtered_long_filtered <- lapply(panel,\(p) LSN_sites_filtered[panel == p, network_id])
+
+LSN_panel_filtered_long_filtered <- split(
+  LSN_sites_filtered$network_id,
+  LSN_sites_filtered$panel)
+
+#this returns a list of 8 with th NA lists, this is because LSN_sites_filtered has data from 2026, but LSN_panel_filtered_long_filtered has 2024 and 2026 only
+#so i have just filtered to remove the 2026 data
+
+panels_keep <- c(
+  "Coupled 1",
+  "Coupled 2",
+  "Coupled 5",
+  "Fixed",
+  "Rotating 1",
+  "Rotating 2")
+
+LSN_panel_filtered_long_filtered <-
+  LSN_panel_filtered_long_filtered[names(LSN_panel_filtered_long_filtered) %in% panels_keep]
+
+#replace the spaces with '_'
+names(LSN_panel_filtered_long_filtered) <-
+  gsub(" ", "_", names(LSN_panel_filtered_long_filtered))
+
+str(LSN_panel_filtered_long_filtered)
+
+# Planned sites per year
+#check if 'N > 0' is correct if not the object returned is empty
+LSN_sites_panel_year <- lapply(param$years, \(x) panel_table[panel_year == x & N > 0, panel_name])
+LSN_sites_planned_year <- lapply(1:length(param$years), \(x) do.call(c, LSN_panel_filtered_long_filtered[LSN_sites_panel_year[[x]]] |> unname()) |> as.data.table())
+
+# Rename + setkey
+lapply(LSN_sites_planned_year, \(x) setnames(x, "V1", "network_id"))
+lapply(LSN_sites_planned_year, \(x) setkey(x, "network_id"))
+# Add ea_rbd
+lapply(LSN_sites_planned_year, \(x) x[LSN_data_filtered, ea_rbd := i.ea_rbd, on="network_id"])
+
+#############################
+# PART 2 - processes data
+#############################
+
+### Reshape data to wide by year, to identify missing values
+# !! To exclude retired + replacements, add site_status!="Retired" & replacement_site_flag!="Yes"
+LSN_wide <- lapply(c(2024, 2025), function(x) dcast(LSN_data_filtered[sample_year==x], network_id + ea_rbd ~ sample_month, value.var="meas_result", fun.aggregate=mean)) 
+names(LSN_wide[[1]])
+#this produces 2 data tables, a table each for 2024 and 2025
+
+# columns
+cols <- as.character(1:12)
+
+# Find missing columns (if any)
+missing_cols <- lapply(LSN_wide, \(x) setdiff(cols, names(x[, -c(1:2)])))
+
+years_24_25 <- c(2024, 2025)
+
+# Add any columns that are missing
+for(i in seq_along(years)) {
+  if(length(missing_cols[[i]]) > 0) {LSN_wide[[i]][, (missing_cols[[i]]) := as.numeric(NaN)]}
+}
+# Set col order
+lapply(LSN_wide, \(x) setcolorder(x, c("network_id", "ea_rbd", cols)))
+
+# Rename columns as dates
+yr <- range(years_24_25)
+d <- seq(as.Date(paste0(yr[1],"-01-01")), as.Date(paste0(yr[2],"-12-01")), by="month")
+
+for(i in seq_along(years)) {
+  x <- c(1:12) + 12 * (i-1)
+  setnames(LSN_wide[[i]], cols, as.character(d[x]))
+}
+
+# col names (dates)
+LSN_wide_names <- lapply(LSN_wide, \(x) names(x)[-c(1:2)])
+
+# Convert NAN to NA
+lapply(LSN_wide, \(x) for(col in names(x)) set(x, which(is.nan(x[[col]])), col, NA))
+
+### Which sites are missing per year
+sites_missing <- lapply(1:length(param$years), \(x) which(!(LSN_sites_planned_year[[x]][, network_id] %in% LSN_wide[[x]][, network_id])))
+
+# Which sites have data, but were not planned to be visited
+sites_visited_not_planned <- lapply(1:length(param$years), \(x) which(!(LSN_wide[[x]][, network_id] %in% LSN_sites_planned_year[[x]][, network_id])))
+
+# Add flag for "extra sites" - those in the database, but were not supposed to be sampled that year
+lapply(1:length(param$years), \(x) LSN_wide[[x]][, extra_site := FALSE])
+lapply(1:length(param$years), \(x) LSN_wide[[x]][sites_visited_not_planned[[x]], extra_site := TRUE])
+
+# Count number of sites with at least 1 visit (sample collection/data point)
+sites_visited <- lapply(LSN_wide, \(x) x[extra_site == FALSE] |> nrow()) 
+
+# Add sites with full missing data
+LSN_wide <- lapply(1:length(param$years), \(x) rbindlist(list(LSN_wide[[x]][extra_site == FALSE], LSN_sites_planned_year[[x]][sites_missing[[x]],]), fill=TRUE))
+
+# Table of sites
+LSN_sites_table <- cbind(year=param$years, original_design=unlist(lapply(LSN_sites_planned_year, nrow)), planned=unlist(lapply(LSN_wide, nrow)), sampled_at_least_once=sites_visited, planned_not_sampled=unlist(lapply(LSN_wide, nrow)) - unlist(sites_visited))
+
+#dont think i need this?
+# Change missing columns for LSN to 0 value
+#if(param$st=="LS" & param$years[1]==2023) {
+#  LSN_wide[[1]][, LSN_wide_names[[1]][1:3] := as.numeric(0)]}
+
+#############################
+### Missing data at National and Regional (RBD) levels (by year)
+
+# Count number of missing values per site per year
+# missing value = NA
+lapply(1:length(param$years), \(x) LSN_wide[[x]][, missing_count := apply(.SD, 1, \(x) length(which(is.na(x)))), .SDcols=LSN_wide_names[[x]]])
+
+# Count number of missing data per month, national level
+LSN_missing_nat <- lapply(1:length(param$years), \(x) LSN_wide[[x]][, lapply(.SD, \(x) length(which(is.na(x)))), .SDcols=LSN_wide_names[[x]]])
+# as %
+LSN_missing_nat_percent <- lapply(1:length(param$years), \(x) LSN_missing_nat[[x]] / nrow(LSN_wide[[x]]) * 100)
+#RSn wide here names is wrong
 
