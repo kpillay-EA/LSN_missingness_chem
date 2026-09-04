@@ -278,6 +278,7 @@ lapply(LSN_sites_planned_year, \(x) x[LSN_data_filtered, ea_rbd := i.ea_rbd, on=
 # !! To exclude retired + replacements, add site_status!="Retired" & replacement_site_flag!="Yes"
 LSN_wide <- lapply(c(2024, 2025), function(x) dcast(LSN_data_filtered[sample_year==x], network_id + ea_rbd ~ sample_month, value.var="meas_result", fun.aggregate=mean)) 
 names(LSN_wide[[1]])
+names(LSN_wide[[2]]) #LIST 2 names are incorrect
 #this produces 2 data tables, a table each for 2024 and 2025
 
 # columns
@@ -336,6 +337,8 @@ LSN_sites_table <- cbind(year=param$years, original_design=unlist(lapply(LSN_sit
 
 #############################
 ### Missing data at National and Regional (RBD) levels (by year)
+#LSN wide here names is wrong (for list2 only), edit below (here the code like before assumes the date of each month starts on the first)
+names(LSN_wide[[2]])[3:14] <- paste0("2025-", sprintf("%02d", 1:12), "-01")
 
 # Count number of missing values per site per year
 # missing value = NA
@@ -343,7 +346,57 @@ lapply(1:length(param$years), \(x) LSN_wide[[x]][, missing_count := apply(.SD, 1
 
 # Count number of missing data per month, national level
 LSN_missing_nat <- lapply(1:length(param$years), \(x) LSN_wide[[x]][, lapply(.SD, \(x) length(which(is.na(x)))), .SDcols=LSN_wide_names[[x]]])
-# as %
+# as percentage
 LSN_missing_nat_percent <- lapply(1:length(param$years), \(x) LSN_missing_nat[[x]] / nrow(LSN_wide[[x]]) * 100)
-#RSn wide here names is wrong
+
+# Total missing data per month
+LSN_missing_nat_totals <- rbindlist(LSN_missing_nat, use.names = FALSE) |> colSums() 
+names(LSN_missing_nat_totals) <- format(ISOdate(2010,1:12, 1),"%b")
+#LSN_missing_nat_totals (NA columns are extra_sites and missing_count)
+#Jan  Feb  Mar  Apr  May  Jun  Jul  Aug  Sep  Oct  Nov  Dec <NA> <NA> 
+#248  244  246   80   72   60   50   55   49   44   43   68   31    0 
+
+## Count number of missing data per month per RBD
+LSN_missing_rbd <- lapply(1:length(param$years), \(x) LSN_wide[[x]][, lapply(.SD, \(x) length(which(is.na(x)))), by=ea_rbd, .SDcols=LSN_wide_names[[x]]] |> setkey("ea_rbd"))
+
+# DROP rows with NA values (some sites do not pick up an RBD for some reason)
+LSN_missing_rbd <- lapply(LSN_missing_rbd, \(x) x[!is.na(ea_rbd), ])
+
+# add total number of sites per RBD
+lapply(1:length(param$years), \(x) LSN_missing_rbd[[x]][LSN_wide[[x]][, .N, by=ea_rbd], sites_total := i.N, on="ea_rbd"])
+
+# as percentage
+LSN_missing_rbd_percent <- lapply(1:length(param$years), \(x) LSN_missing_rbd[[x]][, .SD, .SDcols=LSN_wide_names[[x]]] / LSN_missing_rbd[[x]][, sites_total] * 100) 
+
+# Add yearly mean
+lapply(1:length(param$years), \(x) LSN_missing_rbd_percent[[x]][, yearly_mean := apply(.SD, 1, mean)])
+
+# add rbd back
+lapply(1:length(param$years), \(x) LSN_missing_rbd_percent[[x]][, ea_rbd := LSN_missing_rbd[[x]][, ea_rbd]])
+
+#############################
+### Individual missing table ranked
+
+# Create missing totals for individual sites
+LSN_missing_all <- lapply(LSN_wide, \(x) x[, .(network_id, ea_rbd, missing_count)]) |> rbindlist() |> melt(id.vars=c("network_id", "ea_rbd")) |> dcast(network_id + ea_rbd ~ variable, fun.aggregate = sum, na.rm=TRUE)
+# Add missing as percentage
+# counts 
+site_counts <- lapply(LSN_wide, \(x) x[, network_id]) |> unlist() |> as.character() |> table() |> as.data.table()
+setnames(site_counts, c("V1", "N"), c("network_id", "n_years"))
+# Join tables
+LSN_missing_all[site_counts, n_years := i.n_years, on="network_id"]
+# % (multiply years by 12 to work out)
+LSN_missing_all[, missing_count_pc := round(missing_count / (n_years * 12) * 100, 1)]
+
+# Add site status
+LSN_missing_all[LSN_sites_filtered, site_status := i.status, on="network_id"]
+
+# Format as table and write to file
+LSN_site_miss_table <- LSN_missing_all[, .(network_id, site_status, ea_rbd, n_years, missing_count, missing_count_pc)][order(missing_count_pc, decreasing = TRUE)]
+#
+
+
+
+
+
 
