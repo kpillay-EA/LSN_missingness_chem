@@ -394,8 +394,8 @@ LSN_missing_all[LSN_sites_filtered, site_status := i.status, on="network_id"]
 # Format as table and write to file
 LSN_site_miss_table <- LSN_missing_all[, .(network_id, site_status, ea_rbd, n_years, missing_count, missing_count_pc)][order(missing_count_pc, decreasing = TRUE)]
 
-
-
+#removed param$dc from Ben's code
+fwrite(LSN_site_miss_table, file=paste0("Outputs/", param$fn, tolower(param$fnn), "_missing_data_", yr[1], "-", yr[2], ".csv"))
 
 
 
