@@ -1,0 +1,128 @@
+---
+title: "LSN_WIMS_missing_data_nitrate_report"
+output:
+  html_document:
+    toc: true
+---
+Missing Data Report - Water Quality
+
+```{r}
+#load required libraries
+library(brickster)
+
+```
+
+```{r}
+##to load the data from databricks
+warehouses <- db_sql_warehouse_list()
+
+con <- dbConnect(
+  drv = DatabricksSQL(),
+  warehouse_id = "0a86ae40313bb7db",
+  catalog = "prd_dash_lab")
+
+
+LSN_data <- dbGetQuery(con,
+                       "SELECT * FROM prd_dash_lab.seda_unrestricted.ard_lsn_tbl_sample_wims")
+```
+
+
+This is a report for water quality with data stored in the WIMS table.
+
+?Set the parameters, and then run the report. The data will be pulled from the table on Databricks, and a report will be generated in the `docs` folder. ?Additionally, a `csv` file containing the missing data by site will be generated in the `outputs/tables` folder.
+
+`st` = network, set to "LS"
+
+`dc` = det code (should be det code but based on the LSN data available it is det_desc)
+
+`fn` = prefix for output file names
+
+`fnn` = the name of the variable, used in file names and figures.
+
+`years` = which years to get missing data for
+
+```{r}
+### Set and save the parameters to use for the report
+### Select one, comment out the rest
+## LSN:
+param <- list(st="LS", dc="Ammoniacal Nitrogen, Filtered as N", fn="lsn_wims_", fnn="Nitrogen", years=2024:2025)
+#param <- list(st="LS", dc="Orthophosphate, Filtered as P", fn="lsn_wims_", fnn="Phosphate", years=2024:2025)
+#param <- list(st="LS", dc="Carbon, Organic, Dissolved as C :- {DOC}", fn="lsn_wims_", fnn="DoC", years=2024:2025)	
+#param <- list(st="LS", dc="Temperature of Water", fn="lsn_wims_", fnn="Temperature", years=2024:2025)
+```
+
+```{r}
+# Load libraries
+library(data.table) # data management
+library(DBI)
+library(sf)
+library(dplyr)
+library(lubridate)
+library(tidyr)
+# Run the code to process missing data
+source("LSN_missingness_WIMS.R")
+source("missing_data_plot_functions.r")
+```
+
+## Missing data per unique site
+
+Analysis of missing data for det desc: Ammoniacal Nitrogen, Filtered as N, for the LSN network, which is sampled once per month.
+
+Missing data is determined using the variable: meas_result
+
+The table shows the number of sites sampled per year, although not all were sampled. “Planned visits” are the number of sites that were intended to be sampled that year. “Sampled at least once” is the number of sites visited at least once. “Missing 1 month or more” is the number of sites where there is some missing data for that year. “Planned, never sampled” is the number of sites that were not sampled at all that year.
+
+```{r}
+### Missing sites table
+# Planned sites with 1 missing month or more
+LSN_missing_1more <- lapply(1:length(param$years), function(x) nrow(LSN_wide[[x]][missing_count > 0])) |> unlist()
+# Combine into 1 table and rearrange column order
+tbl_data_missing <- cbind(LSN_sites_filtered, LSN_missing_1more)[, c(1:4, 6, 5)]
+snames <- c("Year", "Original design", "Planned visits", "Sampled at least once", "Missing 1 month or more", "Planned, never sampled")
+colnames(tbl_data_missing) <- snames
+# Convert to DT for
+dt_site_table <- datatable(tbl_data_missing, options=list(dom='t', paging=FALSE), rownames=FALSE)
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+## R Markdown
+
+This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+
+```{r cars}
+summary(cars)
+```
+
+## Including Plots
+
+You can also embed plots, for example:
+
+```{r pressure, echo=FALSE}
+plot(pressure)
+```
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
