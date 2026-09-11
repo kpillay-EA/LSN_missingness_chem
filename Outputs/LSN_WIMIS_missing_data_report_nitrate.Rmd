@@ -57,11 +57,12 @@ library(data.table) # data management
 library(DBI)
 library(sf)
 library(dplyr)
+library(DT)
 library(lubridate)
 library(tidyr)
 # Run the code to process missing data
-source("LSN_missingness_WIMS.R")
-source("missing_data_plot_functions.r")
+#source("LSN_missingness_WIMS.R")
+#source("missing_data_plot_functions.r")
 ```
 
 ## Missing data per unique site
@@ -82,11 +83,43 @@ snames <- c("Year", "Original design", "Planned visits", "Sampled at least once"
 colnames(tbl_data_missing) <- snames
 # Convert to DT for
 dt_site_table <- datatable(tbl_data_missing, options=list(dom='t', paging=FALSE), rownames=FALSE)
+
+dt_site_table
 ```
 
 
 
+“Missingness” is calculated against the number of planned visit sites in any given year. This includes sites that were retired or were/are replacement sites.
 
+Histogram showing percentage of missing data by site:
+
+```{r}
+# Histogram
+par(mar=c(4.5,4.5,1,1))
+hist(LSN_site_miss_table[, missing_count_pc], breaks=seq(-10, 100, 10), col=colorRampPalette(c("#405fc7", "#a5b9fa"))(11), xlab="Missing Data %", main="", axes=FALSE)
+axis(1, at=seq(0, 100, 10), las=1)
+axis(2, at=seq(0, 1600, 100), las=1)
+text(x=-6, y=-35, "None", xpd=TRUE, srt=90)
+```
+
+National level
+
+The barplots show the level of missing data at a national level per month and per year (as percentage):
+
+
+```{r}
+# Round up value to even
+lay_n <- round_up_even(length(param$years))
+# Plot
+par(mar=c(4,4,4,4))
+layout(matrix(1:lay_n, ncol=2, byrow=TRUE))
+# Yearly change by month
+for(i in 1:length(param$years)) {
+    plot_miss_nat_yearly_month(x=LSN_missing_nat_percent[[i]] |> unlist(), title=paste0("Monthly (", param$years[i], ")"), names.arg=format(ISOdate(2010,1:12, 1),"%b"))
+}
+```
+
+And the mean monthly values:
 
 
 
