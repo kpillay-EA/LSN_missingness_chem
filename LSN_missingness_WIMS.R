@@ -54,13 +54,6 @@ if(param$st=="LS") {
 "SELECT * FROM prd_dash_lab.seda_restricted.rss_tbl_samp_wims"
 
 
-# load data
-dapi5c0bef5807d14cd0cd87a8058f30e5d2
-Sys.setenv(DATABRICKS_TOKEN = "dapi5c0bef5807d14cd0cd87a8058f30e5d2")
-Sys.getenv("DATABRICKS_TOKEN")
-Sys.getenv("DATABRICKS_HOST")
-
-
 warehouses <- db_sql_warehouse_list()
 
 con <- dbConnect(
@@ -117,11 +110,8 @@ LSN_sites_filtered <- LSN_sites %>%
 
 LSN_panel <- dbGetQuery(con,
                         "SELECT * FROM prd_dash_lab.seda_unrestricted.ard_lsn_tbl_panel_design")
-#Ben's code, but the input folder is very different to LSN panel design table
+#input folder is very different to RSN/SSN panel design table
 #but the information can be extracted from LSN_dta and LSN_sites
-#rss_panel_dt <- sdf_sql(sc, paste0("SELECT network, panel_name, programme_year, year_of_sampling
-#FROM prd_dash_lab.seda_restricted.rss_tbl_paneldesign
-#WHERE network LIKE '", ifelse(param$st == "RSN", "River", "Small"), "%'")) |> as.data.table()
 
 #columns required
 #network --> not required as in LSN they are the same
@@ -339,6 +329,7 @@ LSN_sites_table <- cbind(year=param$years, original_design=unlist(lapply(LSN_sit
 ### Missing data at National and Regional (RBD) levels (by year)
 #LSN wide here names is wrong (for list2 only), edit below (here the code like before assumes the date of each month starts on the first)
 names(LSN_wide[[2]])[3:14] <- paste0("2025-", sprintf("%02d", 1:12), "-01")
+LSN_wide_names <- lapply(LSN_wide, \(x) names(x)[-c(1:2)])
 
 # Count number of missing values per site per year
 # missing value = NA
