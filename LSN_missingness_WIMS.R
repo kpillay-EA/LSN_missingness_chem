@@ -27,7 +27,7 @@ library(lubridate)
 library(tidyr)
 
 # Load functions 
-source("missing_data_functions.r")
+source("/mnt/workbench/home/GKirthana.Pillay/LSN_missingness_wims/missing_data_functions.r")
 
 ### RSS/RSN/SSN data parameters
 #st= suite type
@@ -339,6 +339,20 @@ lapply(1:length(param$years), \(x) LSN_wide[[x]][, missing_count := apply(.SD, 1
 LSN_missing_nat <- lapply(1:length(param$years), \(x) LSN_wide[[x]][, lapply(.SD, \(x) length(which(is.na(x)))), .SDcols=LSN_wide_names[[x]]])
 # as percentage
 LSN_missing_nat_percent <- lapply(1:length(param$years), \(x) LSN_missing_nat[[x]] / nrow(LSN_wide[[x]]) * 100)
+
+# Total missing data per month
+LSN_missing_nat_totals <- rbindlist(LSN_missing_nat, use.names = FALSE) |> colSums() 
+names(LSN_missing_nat_totals) <- format(ISOdate(2010,1:12, 1),"%b")
+
+# as %
+planned_sites <- LSN_sites_table[,2] |> unlist() |> sum()
+# FOR LSN, planned sites per month (since jan - mar was not done in 2023)
+if(param$st=="SSN" & param$years[1]==2023) {
+  planned_sites <- c(rep(planned_sites - unlist(LSN_sites_table[,2][1]), times=3), rep(planned_sites, times=9))}
+
+# Overall missing data per month
+LSN_missing_nat_totals_pc <- LSN_missing_nat_totals / planned_sites * 100
+
 
 # Total missing data per month
 LSN_missing_nat_totals <- rbindlist(LSN_missing_nat, use.names = FALSE) |> colSums() 
