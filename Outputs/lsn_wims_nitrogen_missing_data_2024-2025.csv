@@ -1,0 +1,236 @@
+network_id,site_status,ea_rbd,n_years,missing_count,missing_count_pc
+LSN0060,Active,North West,1,12,100
+LSN0031,Active,,1,12,100
+LSN0032,Active,,1,12,100
+LSN0048,Active,,1,12,100
+LSN0055,Active,,1,12,100
+LSN0063,Active,,1,12,100
+LSN0068,Active,,2,24,100
+LSN0072,Active,,1,12,100
+LSN0085,Active,,1,12,100
+LSN0088,Active,,1,12,100
+LSN0337,Active,,2,24,100
+LSN0356,Active,,2,24,100
+LSN0360,Active,,2,24,100
+LSN0464,Active,,1,12,100
+LSN0466,Active,,1,12,100
+LSN0471,Active,,1,12,100
+LSN0476,Active,,1,12,100
+LSN0363,Active,,1,12,100
+LSN0365,Active,,1,12,100
+LSN0379,Active,,1,12,100
+LSN0385,Active,,2,24,100
+LSN0058,Active,Anglian,1,10,83.3
+LSN0352,Active,Northumbria,2,20,83.3
+LSN0020,Active,Humber,2,18,75
+LSN0045,Active,Anglian,1,9,75
+LSN0095,Active,Humber,1,9,75
+LSN0013,Active,Thames,2,16,66.7
+LSN0050,Active,Anglian,1,8,66.7
+LSN0073,Active,Thames,1,8,66.7
+LSN0076,Active,North West,1,8,66.7
+LSN0117,Active,South East,1,8,66.7
+LSN0143,Active,Humber,1,8,66.7
+LSN0011,Active,Humber,2,15,62.5
+LSN0341,Active,South East,2,15,62.5
+LSN0061,Active,Humber,1,7,58.3
+LSN0467,Active,Severn,1,7,58.3
+LSN0024,Active,North West,2,13,54.2
+LSN0003,Active,South West,2,12,50
+LSN0026,Active,Anglian,2,12,50
+LSN0043,Active,Humber,1,6,50
+LSN0069,Active,Thames,1,6,50
+LSN0078,Active,Anglian,1,6,50
+LSN0452,Active,Humber,1,6,50
+LSN0454,Active,Thames,1,6,50
+LSN0458,Active,Anglian,1,6,50
+LSN0472,Active,North West,1,6,50
+LSN0479,Active,Humber,1,6,50
+LSN0346,Active,Anglian,2,11,45.8
+LSN0034,Active,Anglian,1,5,41.7
+LSN0035,Active,Severn,1,5,41.7
+LSN0038,Active,Thames,1,5,41.7
+LSN0040,Active,North West,1,5,41.7
+LSN0052,Active,North West,1,5,41.7
+LSN0083,Active,Thames,1,5,41.7
+LSN0089,Active,Thames,1,5,41.7
+LSN0135,Active,Humber,1,5,41.7
+LSN0010,Active,Anglian,2,9,37.5
+LSN0029,Active,Thames,2,9,37.5
+LSN0334,Active,South West,2,9,37.5
+LSN0342,Active,Thames,2,9,37.5
+LSN0022,Active,Anglian,2,8,33.3
+LSN0041,Active,Thames,1,4,33.3
+LSN0046,Active,Severn,1,4,33.3
+LSN0047,Active,Humber,1,4,33.3
+LSN0049,Active,South East,1,4,33.3
+LSN0059,Active,Humber,1,4,33.3
+LSN0064,Active,Northumbria,1,4,33.3
+LSN0065,Active,Thames,1,4,33.3
+LSN0066,Active,Severn,1,4,33.3
+LSN0070,Active,Anglian,1,4,33.3
+LSN0080,Active,North West,1,4,33.3
+LSN0082,Active,Anglian,1,4,33.3
+LSN0086,Active,Anglian,1,4,33.3
+LSN0090,Active,Anglian,1,4,33.3
+LSN0099,Active,Severn,1,4,33.3
+LSN0114,Active,Anglian,1,4,33.3
+LSN0116,Active,North West,1,4,33.3
+LSN0125,Active,Humber,1,4,33.3
+LSN0131,Active,South West,1,4,33.3
+LSN0147,Active,Thames,1,4,33.3
+LSN0339,Active,Severn,2,8,33.3
+LSN0351,Active,Humber,2,8,33.3
+LSN0370,Active,Anglian,1,4,33.3
+LSN0375,Active,Anglian,1,4,33.3
+LSN0390,Active,Anglian,1,4,33.3
+LSN0451,Active,Severn,1,4,33.3
+LSN0453,Active,Thames,1,4,33.3
+LSN0457,Active,Thames,1,4,33.3
+LSN0462,Active,South West,1,4,33.3
+LSN0470,Active,Anglian,1,4,33.3
+LSN0477,Active,Humber,1,4,33.3
+LSN0478,Active,South West,1,4,33.3
+LSN0007,Active,Humber,2,6,25
+LSN0033,Active,Thames,1,3,25
+LSN0036,Active,Humber,1,3,25
+LSN0037,Active,Thames,1,3,25
+LSN0039,Active,Anglian,1,3,25
+LSN0042,Active,Anglian,1,3,25
+LSN0044,Active,Humber,1,3,25
+LSN0051,Active,Severn,1,3,25
+LSN0053,Active,South East,1,3,25
+LSN0054,Active,Thames,1,3,25
+LSN0056,Active,North West,1,3,25
+LSN0057,Active,Thames,1,3,25
+LSN0062,Active,Severn,1,3,25
+LSN0067,Active,South West,1,3,25
+LSN0071,Active,Severn,1,3,25
+LSN0074,Active,Anglian,1,3,25
+LSN0075,Active,Humber,1,3,25
+LSN0077,Active,Thames,1,3,25
+LSN0079,Active,Humber,1,3,25
+LSN0081,Active,South East,1,3,25
+LSN0084,Active,Northumbria,1,3,25
+LSN0087,Active,Anglian,1,3,25
+LSN0091,Active,Humber,1,3,25
+LSN0092,Active,Humber,1,3,25
+LSN0094,Active,South West,1,3,25
+LSN0096,Active,North West,1,3,25
+LSN0097,Active,Thames,1,3,25
+LSN0098,Active,Anglian,1,3,25
+LSN0100,Active,Humber,1,3,25
+LSN0101,Active,Thames,1,3,25
+LSN0102,Active,Thames,1,3,25
+LSN0103,Active,Anglian,1,3,25
+LSN0104,Active,North West,1,3,25
+LSN0105,Active,Thames,1,3,25
+LSN0106,Active,Anglian,1,3,25
+LSN0107,Active,Humber,1,3,25
+LSN0108,Active,North West,1,3,25
+LSN0109,Active,Anglian,1,3,25
+LSN0110,Active,Severn,1,3,25
+LSN0111,Active,Humber,1,3,25
+LSN0112,Active,North West,1,3,25
+LSN0113,Active,South East,1,3,25
+LSN0115,Active,Severn,1,3,25
+LSN0118,Active,Thames,1,3,25
+LSN0119,Active,Anglian,1,3,25
+LSN0120,Active,Humber,1,3,25
+LSN0121,Active,Thames,1,3,25
+LSN0122,Active,Anglian,1,3,25
+LSN0124,Active,North West,1,3,25
+LSN0126,Active,South West,1,3,25
+LSN0127,Active,Humber,1,3,25
+LSN0128,Active,Northumbria,1,3,25
+LSN0129,Active,Thames,1,3,25
+LSN0130,Active,Humber,1,3,25
+LSN0132,Active,Humber,1,3,25
+LSN0133,Active,Thames,1,3,25
+LSN0134,Active,Anglian,1,3,25
+LSN0136,Active,Severn,1,3,25
+LSN0137,Active,Thames,1,3,25
+LSN0138,Active,Anglian,1,3,25
+LSN0139,Active,Anglian,1,3,25
+LSN0140,Active,North West,1,3,25
+LSN0141,Active,Thames,1,3,25
+LSN0144,Active,North West,1,3,25
+LSN0145,Active,Thames,1,3,25
+LSN0146,Active,Anglian,1,3,25
+LSN0148,Active,Humber,1,3,25
+LSN0149,Active,Thames,1,3,25
+LSN0150,Active,Thames,1,3,25
+LSN0338,Active,Anglian,2,6,25
+LSN0361,Active,Anglian,1,3,25
+LSN0362,Active,Anglian,1,3,25
+LSN0364,Active,Humber,1,3,25
+LSN0366,Active,South West,1,3,25
+LSN0367,Active,Humber,1,3,25
+LSN0368,Active,North West,1,3,25
+LSN0369,Active,South East,1,3,25
+LSN0371,Active,Severn,1,3,25
+LSN0372,Active,North West,1,3,25
+LSN0373,Active,South East,1,3,25
+LSN0374,Active,Thames,1,3,25
+LSN0376,Active,North West,1,3,25
+LSN0377,Active,Thames,1,3,25
+LSN0378,Active,Anglian,1,3,25
+LSN0380,Active,North West,1,3,25
+LSN0381,Active,Humber,1,3,25
+LSN0382,Active,South West,1,3,25
+LSN0383,Active,Humber,1,3,25
+LSN0384,Active,Northumbria,1,3,25
+LSN0386,Active,Anglian,1,3,25
+LSN0387,Active,Thames,1,3,25
+LSN0388,Active,Humber,1,3,25
+LSN0389,Active,Thames,1,3,25
+LSN0455,Active,Anglian,1,3,25
+LSN0456,Active,North West,1,3,25
+LSN0459,Active,Humber,1,3,25
+LSN0460,Active,North West,1,3,25
+LSN0461,Active,Thames,1,3,25
+LSN0463,Active,Humber,1,3,25
+LSN0465,Active,South East,1,3,25
+LSN0468,Active,North West,1,3,25
+LSN0469,Active,Thames,1,3,25
+LSN0474,Active,Anglian,1,3,25
+LSN0475,Active,Humber,1,3,25
+LSN0480,Active,Northumbria,1,3,25
+LSN0004,Active,Humber,2,5,20.8
+LSN0014,Active,Anglian,2,5,20.8
+LSN0025,Active,Anglian,2,5,20.8
+LSN0343,Active,Anglian,2,5,20.8
+LSN0347,Active,Humber,2,5,20.8
+LSN0350,Active,South West,2,5,20.8
+LSN0353,Active,Thames,2,5,20.8
+LSN0358,Active,Anglian,2,5,20.8
+LSN0359,Active,Anglian,2,5,20.8
+LSN0006,Active,Anglian,2,4,16.7
+LSN0008,Active,Humber,2,4,16.7
+LSN0009,Active,Thames,2,4,16.7
+LSN0016,Active,North West,2,4,16.7
+LSN0018,Active,Anglian,2,4,16.7
+LSN0021,Active,Thames,2,4,16.7
+LSN0028,Active,North West,2,4,16.7
+LSN0030,Active,South West,2,4,16.7
+LSN0142,Active,Anglian,1,2,16.7
+LSN0331,Active,Anglian,2,4,16.7
+LSN0335,Active,Humber,2,4,16.7
+LSN0336,Active,North West,2,4,16.7
+LSN0340,Active,North West,2,4,16.7
+LSN0344,Active,North West,2,4,16.7
+LSN0345,Active,Thames,2,4,16.7
+LSN0349,Active,Humber,2,4,16.7
+LSN0354,Active,Anglian,2,4,16.7
+LSN0355,Active,Thames,2,4,16.7
+LSN0001,Active,Thames,2,3,12.5
+LSN0005,Active,Thames,2,3,12.5
+LSN0012,Active,North West,2,3,12.5
+LSN0015,Active,Humber,2,3,12.5
+LSN0017,Active,Thames,2,3,12.5
+LSN0019,Active,Thames,2,3,12.5
+LSN0023,Active,Anglian,2,3,12.5
+LSN0027,Active,Anglian,2,3,12.5
+LSN0332,Active,North West,2,3,12.5
+LSN0333,Active,Thames,2,3,12.5
+LSN0348,Active,North West,2,3,12.5
