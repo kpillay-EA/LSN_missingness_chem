@@ -1,5 +1,4 @@
-getwd()
-#from Ben B's repository https://github.com/Environment-Agency-Gov/ncea-das-network_eval-missing_data/blob/main/scripts/rss_chem_missing_data.r 
+#from Ben B's repository https://github.com/Environment-Agency-Gov/ncea-das-network_eval-missing_data/blob/main/scripts/rss_wims_missing_data.r 
 #############################
 ### Analysis of missing data in LSN network
 ### Chemistry (Water quality - WIMS)
@@ -30,29 +29,15 @@ library(tidyr)
 source("/mnt/workbench/home/GKirthana.Pillay/LSN_missingness_wims/missing_data_functions.r")
 
 ### RSS/RSN/SSN data parameters
-#st= suite type
+#st= suite type/network here it is LS
 #dc= det_code but not included atm
-#fn = 
-#fnn = 
-#years = sampling years
+#fn = prefix for output file names
+#fnn = the name of the variable, used in file names and figures.
+#years = sampling years/which years to get missing data for
 
 param <- list(st="LS", dc="Ammoniacal Nitrogen, Filtered as N", fn="lsn_wims_", fnn="Nitrogen", years=2024:2025)
 
-## Site data
-# Filter on network, and on design years
-# Convert years to "design years"
-
-if(param$st=="LS") {
-  param$design_years <- ifelse(param$years %in% 2024:2027, 2024, ifelse(param$years >= 2028, 2028, param$years))
-} else {
-  param$design_years <- ifelse(param$years %in% 2021:2025, 2021, ifelse(param$years >= 2026, 2026, param$years))
-}
-
-
-# for reference delete later
-#RSS_data <- dbGetQuery(con,
-"SELECT * FROM prd_dash_lab.seda_restricted.rss_tbl_samp_wims"
-
+#establish connectioin to databricks
 
 warehouses <- db_sql_warehouse_list()
 
@@ -61,16 +46,15 @@ con <- dbConnect(
   warehouse_id = "0a86ae40313bb7db",
   catalog = "prd_dash_lab")
 
-
-#in Ben's code this is rss_dt
+#SQL code here to import the relevant dataset from databricks
 LSN_data <- dbGetQuery(con,
                        "SELECT * FROM prd_dash_lab.seda_unrestricted.ard_lsn_tbl_sample_wims")
 
+#Filter the data based on network id (but since this network is Lakes only it should be okay)
 LSN_data_filtered <- LSN_data %>%
   filter(
     startsWith(suite_type, param$st),
-    det_desc == param$dc
-  ) %>%
+    det_desc == param$dc) %>%
   dplyr::select(
     suite_type,
     det_desc,
@@ -80,12 +64,12 @@ LSN_data_filtered <- LSN_data %>%
     meas_result)
 
 
+## Site data
 # Load sites, match on design year
 LSN_sites <- dbGetQuery(con,
                         "SELECT * FROM prd_dash_lab.seda_unrestricted.ard_lsn_point_sites")
 
 #Select columns
-
 LSN_sites_filtered <- LSN_sites %>%
   mutate(version_start = dmy(version_start)) %>%
   dplyr::select(
@@ -97,8 +81,7 @@ LSN_sites_filtered <- LSN_sites %>%
     replacement_site_flag,
     latitude_wgs_84,
     longitude_wgs_84,
-    version_start
-  ) %>%
+    version_start) %>%
   filter(
     startsWith(network_id, param$st),
     year(version_start) %in% c(2024, 2025))
@@ -106,39 +89,20 @@ LSN_sites_filtered <- LSN_sites %>%
 #here edit to only inlcude 2024 and 2025
 #only 2 records have been removed
 
-#Panel
-
-LSN_panel <- dbGetQuery(con,
-                        "SELECT * FROM prd_dash_lab.seda_unrestricted.ard_lsn_tbl_panel_design")
-#input folder is very different to RSN/SSN panel design table
-#but the information can be extracted from LSN_dta and LSN_sites
-
+#For panel information extract required data from LSN_sites 
 #columns required
-#network --> not required as in LSN they are the same
-#panel_name --> panel column from LSN_sites (should i rename?)
-#programme_year --> all should be 2024 when the sampling on LSN started - version start extract the year only 
-#year_of_sampling --> year column from LSN_sites (used only 2024 and 2025 so that is year 1 and 2 - need to format this again)
 
-LSN_panel_filered <- LSN_sites %>%
+LSN_panel<- LSN_sites %>%
   dplyr::select(network_id,
                 panel,
                 version_start,
                 year)
 
-LSN_panel_filered_1 <- LSN_panel_filered %>%
-  mutate(panel = gsub(" ", "_", panel))
-
-LSN_panel_filered_long <- LSN_panel_filered_1 %>%
-  separate_rows(year, sep = ",\\s*")
-
-LSN_panel_filtered_long_filtered <- LSN_panel_filered_long %>%
-  filter(year %in% c("Y1", "Y2"))
-
-LSN_panel_filtered_long_filtered <- LSN_panel_filtered_long_filtered %>%
+LSN_panel_filtered <- LSN_panel %>%
   mutate(
-    programme_year = recode(year,
-                            "Y1" = "2024",
-                            "Y2" = "2025"))
+    panel = gsub(" ", "_", panel)) %>%
+  separate_rows(year, sep = ",\\s*") %>%
+  mutate(programme_year = c(Y1 = "2024", Y2 = "2025", Y3 = "2026", Y4 = "2027", Y5 = "2028")[year])
 
 ### Convert data
 # Convert date/time to .IDate
@@ -154,16 +118,14 @@ LSN_data_filtered[, network_id := as.factor(network_id)]
 # Set key (order)
 setkeyv(LSN_data_filtered, c("network_id", "sample_date"))
 
-
 # Add geometry to sites
 LSN_sites_filtered <- as.data.table(LSN_sites_filtered)
 LSN_sites_filtered[, geometry := sf::st_as_sf(LSN_sites_filtered[, .(longitude_wgs_84, latitude_wgs_84)], coords=c("longitude_wgs_84", "latitude_wgs_84"), crs=4326) |> st_transform(27700)]
 
-
 # Add years to panel
-LSN_panel_filtered_long_filtered <- as.data.table(LSN_panel_filtered_long_filtered)
-LSN_panel_filtered_long_filtered[, panel_year := as.integer(programme_year)]
-#here is it under panel column: fixed_year or just a column with year?
+LSN_panel_filtered <- as.data.table(LSN_panel_filtered)
+LSN_panel_filtered[, panel_year := as.integer(programme_year)]
+
 
 ###################################
 ### Add rbd and mncat to sites list
@@ -183,7 +145,6 @@ file_eng_border <- db_volume_read(path = path_eng_border,
                              destination = tempfile())
 sh_eng <- readRDS(file_eng_border)
 
-
 # Crop ea_rbd/mcat to england shape (this tidies it up)
 ea_rbd_crop <- st_intersection(ea_rbd, sh_eng)
 
@@ -195,12 +156,12 @@ st_geometry(ea_rbd[4,]) <- st_union(x=ea_rbd[5,], y=ea_rbd[4,], by_feature=TRUE)
 ea_rbd <- ea_rbd[-c(1, 5),]
 
 # Which basins/catchments do sample points fall in
-rss_rbd <- st_contains(ea_rbd, LSN_sites_filtered[, geometry])
-rss_mncat <- st_contains(ea_mncat, LSN_sites_filtered[, geometry])
+LSN_rbd <- st_contains(ea_rbd, LSN_sites_filtered[, geometry])
+LSN_mncat <- st_contains(ea_mncat, LSN_sites_filtered[, geometry])
 
 # Add to sample points data table
-LSN_sites_filtered[, ea_rbd := contains_point_name(x=rss_rbd, n=ea_rbd$RIVER_BASIN_DISTRICT)]
-LSN_sites_filtered[, ea_mncat := contains_point_name(x=rss_mncat, n=ea_mncat$mncat_id)]
+LSN_sites_filtered[, ea_rbd := contains_point_name(x=LSN_rbd, n=ea_rbd$RIVER_BASIN_DISTRICT)]
+LSN_sites_filtered[, ea_mncat := contains_point_name(x=LSN_mncat, n=ea_mncat$mncat_id)]
 
 ###################################
 ### Join site data to main table
@@ -214,48 +175,33 @@ LSN_data_filtered[LSN_sites_filtered, on = "network_id",
 ### Sites planned to visit, but no data will not show in database.
 # Need to cross check these against panel and sites.
 
-panel_table <- LSN_panel_filtered_long_filtered[, .(panel, panel_year)] |> table() |> as.data.table()
+panel_table <- LSN_panel_filtered[, .(panel, panel_year)] |> table() |> as.data.table()
 names(panel_table)[names(panel_table) == "panel"] <- "panel_name"
 
 # Get unique panel names
 panel <- panel_table[, panel_name] |> unique()
 
-
 #because i dont have current panel column, it is just panel and none of the sites have been rejected
 # Get sites for each panel
-LSN_panel_filtered_long_filtered <- lapply(panel,\(p) LSN_sites_filtered[panel == p, network_id])
+LSN_panel_filtered <- lapply(panel,\(p) LSN_sites_filtered[panel == p, network_id])
 
-LSN_panel_filtered_long_filtered <- split(
+LSN_panel_filtered <- split(
   LSN_sites_filtered$network_id,
   LSN_sites_filtered$panel)
 
-#this returns a list of 8 with th NA lists, this is because LSN_sites_filtered has data from 2026, but LSN_panel_filtered_long_filtered has 2024 and 2026 only
-#so i have just filtered to remove the 2026 data
-
-panels_keep <- c(
-  "Coupled 1",
-  "Coupled 2",
-  "Coupled 5",
-  "Fixed",
-  "Rotating 1",
-  "Rotating 2")
-
-LSN_panel_filtered_long_filtered <-
-  LSN_panel_filtered_long_filtered[names(LSN_panel_filtered_long_filtered) %in% panels_keep]
-
 #replace the spaces with '_'
-names(LSN_panel_filtered_long_filtered) <-
-  gsub(" ", "_", names(LSN_panel_filtered_long_filtered))
+names(LSN_panel_filtered) <-
+  gsub(" ", "_", names(LSN_panel_filtered))
 
-str(LSN_panel_filtered_long_filtered)
+#str(LSN_panel_filtered)
 
 # Planned sites per year
 #check if 'N > 0' is correct if not the object returned is empty
-LSN_sites_panel_year <- lapply(param$years, \(x) panel_table[panel_year == x & N > 0, panel_name])
-LSN_sites_planned_year <- lapply(1:length(param$years), \(x) do.call(c, LSN_panel_filtered_long_filtered[LSN_sites_panel_year[[x]]] |> unname()) |> as.data.table())
+LSN_sites_panel_year <- lapply(param$years, \(x) panel_table[panel_year == x & N >0, panel_name])
+LSN_sites_planned_year <- lapply(1:length(param$years), \(x) do.call(c, LSN_panel_filtered[LSN_sites_panel_year[[x]]] |> unname()) |> as.data.table())
 
 # Rename + setkey
-lapply(LSN_sites_planned_year, \(x) setnames(x, "V1", "network_id"))
+lapply(LSN_sites_planned_year, \(x) setnames(x, "V1", "network_id")) 
 lapply(LSN_sites_planned_year, \(x) setkey(x, "network_id"))
 # Add ea_rbd
 lapply(LSN_sites_planned_year, \(x) x[LSN_data_filtered, ea_rbd := i.ea_rbd, on="network_id"])
@@ -266,10 +212,9 @@ lapply(LSN_sites_planned_year, \(x) x[LSN_data_filtered, ea_rbd := i.ea_rbd, on=
 
 ### Reshape data to wide by year, to identify missing values
 # !! To exclude retired + replacements, add site_status!="Retired" & replacement_site_flag!="Yes"
-LSN_wide <- lapply(c(2024, 2025), function(x) dcast(LSN_data_filtered[sample_year==x], network_id + ea_rbd ~ sample_month, value.var="meas_result", fun.aggregate=mean)) 
+LSN_wide <- lapply(param$years, function(x) dcast(LSN_data_filtered[sample_year==x], network_id + ea_rbd ~ sample_month, value.var="meas_result", fun.aggregate=mean)) 
 names(LSN_wide[[1]])
-names(LSN_wide[[2]]) #LIST 2 names are incorrect
-#this produces 2 data tables, a table each for 2024 and 2025
+names(LSN_wide[[2]]) 
 
 # columns
 cols <- as.character(1:12)
@@ -277,20 +222,18 @@ cols <- as.character(1:12)
 # Find missing columns (if any)
 missing_cols <- lapply(LSN_wide, \(x) setdiff(cols, names(x[, -c(1:2)])))
 
-years_24_25 <- c(2024, 2025)
-
 # Add any columns that are missing
 for(i in seq_along(years)) {
   if(length(missing_cols[[i]]) > 0) {LSN_wide[[i]][, (missing_cols[[i]]) := as.numeric(NaN)]}
 }
-# Set col order
+# Set months in correct order
 lapply(LSN_wide, \(x) setcolorder(x, c("network_id", "ea_rbd", cols)))
 
 # Rename columns as dates
-yr <- range(years_24_25)
+yr <- range(param$years)
 d <- seq(as.Date(paste0(yr[1],"-01-01")), as.Date(paste0(yr[2],"-12-01")), by="month")
 
-for(i in seq_along(years)) {
+for(i in 1:length(param$years)) {
   x <- c(1:12) + 12 * (i-1)
   setnames(LSN_wide[[i]], cols, as.character(d[x]))
 }
@@ -320,46 +263,33 @@ LSN_wide <- lapply(1:length(param$years), \(x) rbindlist(list(LSN_wide[[x]][extr
 # Table of sites
 LSN_sites_table <- cbind(year=param$years, original_design=unlist(lapply(LSN_sites_planned_year, nrow)), planned=unlist(lapply(LSN_wide, nrow)), sampled_at_least_once=sites_visited, planned_not_sampled=unlist(lapply(LSN_wide, nrow)) - unlist(sites_visited))
 
-#dont think i need this?
-# Change missing columns for LSN to 0 value
-#if(param$st=="LS" & param$years[1]==2023) {
-#  LSN_wide[[1]][, LSN_wide_names[[1]][1:3] := as.numeric(0)]}
-
 #############################
 ### Missing data at National and Regional (RBD) levels (by year)
-#LSN wide here names is wrong (for list2 only), edit below (here the code like before assumes the date of each month starts on the first)
-names(LSN_wide[[2]])[3:14] <- paste0("2025-", sprintf("%02d", 1:12), "-01")
-LSN_wide_names <- lapply(LSN_wide, \(x) names(x)[-c(1:2)])
-
 # Count number of missing values per site per year
 # missing value = NA
 lapply(1:length(param$years), \(x) LSN_wide[[x]][, missing_count := apply(.SD, 1, \(x) length(which(is.na(x)))), .SDcols=LSN_wide_names[[x]]])
 
 # Count number of missing data per month, national level
 LSN_missing_nat <- lapply(1:length(param$years), \(x) LSN_wide[[x]][, lapply(.SD, \(x) length(which(is.na(x)))), .SDcols=LSN_wide_names[[x]]])
-# as percentage
+# as percentage %
 LSN_missing_nat_percent <- lapply(1:length(param$years), \(x) LSN_missing_nat[[x]] / nrow(LSN_wide[[x]]) * 100)
 
 # Total missing data per month
 LSN_missing_nat_totals <- rbindlist(LSN_missing_nat, use.names = FALSE) |> colSums() 
 names(LSN_missing_nat_totals) <- format(ISOdate(2010,1:12, 1),"%b")
 
-# as %
+# as percentage %
 planned_sites <- LSN_sites_table[,2] |> unlist() |> sum()
-# FOR LSN, planned sites per month (since jan - mar was not done in 2023)
-if(param$st=="SSN" & param$years[1]==2023) {
+# FOR LSN, planned sites per month (since jan - mar was not done in 2024)
+if(param$st=="LS" & param$years[1]==2024) {
   planned_sites <- c(rep(planned_sites - unlist(LSN_sites_table[,2][1]), times=3), rep(planned_sites, times=9))}
 
 # Overall missing data per month
 LSN_missing_nat_totals_pc <- LSN_missing_nat_totals / planned_sites * 100
 
-
 # Total missing data per month
 LSN_missing_nat_totals <- rbindlist(LSN_missing_nat, use.names = FALSE) |> colSums() 
 names(LSN_missing_nat_totals) <- format(ISOdate(2010,1:12, 1),"%b")
-#LSN_missing_nat_totals (NA columns are extra_sites and missing_count)
-#Jan  Feb  Mar  Apr  May  Jun  Jul  Aug  Sep  Oct  Nov  Dec <NA> <NA> 
-#248  244  246   80   72   60   50   55   49   44   43   68   31    0 
 
 ## Count number of missing data per month per RBD
 LSN_missing_rbd <- lapply(1:length(param$years), \(x) LSN_wide[[x]][, lapply(.SD, \(x) length(which(is.na(x)))), by=ea_rbd, .SDcols=LSN_wide_names[[x]]] |> setkey("ea_rbd"))
