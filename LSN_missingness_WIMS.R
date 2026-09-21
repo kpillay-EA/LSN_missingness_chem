@@ -24,6 +24,7 @@ library(sf)
 library(dplyr)
 library(lubridate)
 library(tidyr)
+library(here)
 
 # Load functions 
 source("/mnt/workbench/home/GKirthana.Pillay/LSN_missingness_wims/missing_data_functions.r")
@@ -263,6 +264,11 @@ LSN_wide <- lapply(1:length(param$years), \(x) rbindlist(list(LSN_wide[[x]][extr
 # Table of sites
 LSN_sites_table <- cbind(year=param$years, original_design=unlist(lapply(LSN_sites_planned_year, nrow)), planned=unlist(lapply(LSN_wide, nrow)), sampled_at_least_once=sites_visited, planned_not_sampled=unlist(lapply(LSN_wide, nrow)) - unlist(sites_visited))
 
+# Change missing columns for SSN to 0 value
+if(param$st=="LS" & param$years[1]==2024) {
+  LSN_wide[[1]][, LSN_wide_names[[1]][1:3] := as.numeric(0)]
+}
+
 #############################
 ### Missing data at National and Regional (RBD) levels (by year)
 # Count number of missing values per site per year
@@ -280,16 +286,13 @@ names(LSN_missing_nat_totals) <- format(ISOdate(2010,1:12, 1),"%b")
 
 # as percentage %
 planned_sites <- LSN_sites_table[,2] |> unlist() |> sum()
+
 # FOR LSN, planned sites per month (since jan - mar was not done in 2024)
 if(param$st=="LS" & param$years[1]==2024) {
   planned_sites <- c(rep(planned_sites - unlist(LSN_sites_table[,2][1]), times=3), rep(planned_sites, times=9))}
 
 # Overall missing data per month
 LSN_missing_nat_totals_pc <- LSN_missing_nat_totals / planned_sites * 100
-
-# Total missing data per month
-LSN_missing_nat_totals <- rbindlist(LSN_missing_nat, use.names = FALSE) |> colSums() 
-names(LSN_missing_nat_totals) <- format(ISOdate(2010,1:12, 1),"%b")
 
 ## Count number of missing data per month per RBD
 LSN_missing_rbd <- lapply(1:length(param$years), \(x) LSN_wide[[x]][, lapply(.SD, \(x) length(which(is.na(x)))), by=ea_rbd, .SDcols=LSN_wide_names[[x]]] |> setkey("ea_rbd"))
@@ -329,9 +332,7 @@ LSN_missing_all[LSN_sites_filtered, site_status := i.status, on="network_id"]
 # Format as table and write to file
 LSN_site_miss_table <- LSN_missing_all[, .(network_id, site_status, ea_rbd, n_years, missing_count, missing_count_pc)][order(missing_count_pc, decreasing = TRUE)]
 
-#removed param$dc from Ben's code
-fwrite(LSN_site_miss_table, file=paste0("Outputs/", param$fn, tolower(param$fnn), "_missing_data_", yr[1], "-", yr[2], ".csv"))
-
-
+#write to a .csv file in outputs folder
+fwrite(LSN_site_miss_table, file=here("Outputs", paste0(param$fn, tolower(param$fnn), "_missing_data_", yr[1], "-", yr[2], ".csv")))
 
 
