@@ -1,12 +1,37 @@
 ---
-title: "LSN_WIMS_missing_data_nitrate_report"
+title: "**Missing Data Report - Water Quality - Nitrate**"
 output:
   html_document:
     toc: true
+    code_folding: hide
+    highlight: tango
+    self_contained: true
 ---
-Missing Data Report - Water Quality
 
-```{r}
+
+This is a report for water quality with data stored in the WIMS table.
+
+?Set the parameters, and then run the report. The data will be pulled from the table on Databricks, and a report will be generated in the `docs` folder. ?Additionally, a `csv` file containing the missing data by site will be generated in the `outputs/tables` folder.
+
+`st` = network, set to "LS"
+
+`dc` = det code (should be det code but based on the LSN data available it is det_desc)
+
+`fn` = prefix for output file names
+
+`fnn` = the name of the variable, used in file names and figures.
+
+`years` = which years to get missing data for
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+  echo = TRUE,
+  message = FALSE,
+  warning = FALSE,
+  attr.source = ".numberLines")
+
+
+
 #load required libraries
 library(brickster)
 
@@ -27,19 +52,6 @@ LSN_data <- dbGetQuery(con,
 ```
 
 
-This is a report for water quality with data stored in the WIMS table.
-
-?Set the parameters, and then run the report. The data will be pulled from the table on Databricks, and a report will be generated in the `docs` folder. ?Additionally, a `csv` file containing the missing data by site will be generated in the `outputs/tables` folder.
-
-`st` = network, set to "LS"
-
-`dc` = det code (should be det code but based on the LSN data available it is det_desc)
-
-`fn` = prefix for output file names
-
-`fnn` = the name of the variable, used in file names and figures.
-
-`years` = which years to get missing data for
 
 ```{r}
 ### Set and save the parameters to use for the report
@@ -61,11 +73,13 @@ library(DT)
 library(lubridate)
 library(tidyr)
 # Run the code to process missing data
+
 source("../LSN_missingness_WIMS.R")
 source("../missing_data_plot_functions.r")
+source("../missing_data_functions.r")
 ```
 
-## Missing data per unique site
+## **Missing data per unique site**
 
 Analysis of missing data for det desc: Ammoniacal Nitrogen, Filtered as N, for the LSN network, which is sampled once per month.
 
@@ -96,14 +110,14 @@ Histogram showing percentage of missing data by site:
 ```{r}
 # Histogram
 par(mar=c(4.5,4.5,1,1))
-hist(LSN_site_miss_table[, missing_count_pc], col=colorRampPalette(c("#405fc7", "#a5b9fa"))(11), xlab="Missing Data %", main="", axes=FALSE)
+hist(LSN_site_miss_table[, missing_count_pc], breaks=seq(0, 100, 10), col=colorRampPalette(c("#405fc7", "#a5b9fa"))(11), xlab="Missing Data %", main="", axes=FALSE)
 axis(1, at=seq(0, 100, 10), las=1)
 axis(2, at=seq(0, 1600, 100), las=1)
-text(x=-6, y=-35, "None", xpd=TRUE, srt=90)
+#text(x=0, y=-10, "None", xpd=TRUE, srt=90)
 
 ```
 
-National level
+# **National level**
 
 The barplots show the level of missing data at a national level per month and per year (as percentage):
 
@@ -134,8 +148,9 @@ The mean level (%) of missing data per year is:
 ```{r}
 # Format table to show mean misisng data per year
 tbl_data_year_missing <- data.frame(Year = param$years, Missing = unlist(lapply(LSN_missing_nat_percent, \(x) round(mean(unlist(x)), 1))))
-dt_year_missing <- datatable(tbl_data_year_missing, options = list(dom = 't', paging = FALSE), rownames = FALSE, width = "auto")
+dt_year_missing <- datatable(tbl_data_year_missing, options = list(dom = 't', paging = FALSE, autoWidth = TRUE), rownames = FALSE, width = "20")
 
+dt_year_missing
 ```
 
 The mean level (%) of missing data per month across 2023 - 2025 is:
@@ -143,13 +158,14 @@ The mean level (%) of missing data per month across 2023 - 2025 is:
 ```{r}
 # Format table to show mean misisng data per year
 tbl_data_month_missing <- data.frame(Month = format(ISOdate(2010,1:12, 1), "%B"), Missing = round(LSN_missing_nat_totals_pc, 1))
-dt_month_missing <- DT::datatable(tbl_data_month_missing, options = list(dom = 't', paging = FALSE, autoWidth = FALSE), rownames = FALSE, width = "auto")
+dt_month_missing <- DT::datatable(tbl_data_month_missing, options = list(dom = 't', paging = FALSE, autoWidth = TRUE), rownames = FALSE, width = "20")
 
+dt_month_missing
 ```
 
-## Littles MCAR Test
+## **Littles MCAR Test**
 
-National level missing data was tested to see whether it should be considered Missing Completely at Random (MCAR). These results should be considered as supporting evidence of the type of missing data (if no results are shown, it means test was not run due to too much missing data):
+National level missing data was tested to see whether it should be considered Missing Completely at Random (MCAR). This test helps determine whether the pattern of missing measurements appears systematic or essentially unrelated to the data. These results should be considered as supporting evidence of the type of missing data (if no results are shown, it means test was not run due to too much missing data):
 
 ```{r}
 # Skip this for variables with too much missing data (it fails)
@@ -165,14 +181,14 @@ res_dt[, `:=`(statistic = as.integer(round(statistic)), p.value = round(p.value,
 res_dt[, year := param$years]
 setcolorder(res_dt, "year")
 # Change to DT for display
-res_dt <- DT::datatable(res_dt, options = list(dom = 't', paging = FALSE, autoWidth = FALSE), rownames = FALSE, width = "auto")
-}
+res_dt <- DT::datatable(res_dt, options = list(dom = 't', paging = FALSE, autoWidth = FALSE), rownames = FALSE, width = "auto")}
+
 ```
 
-P values that are not significant (greater than 0.05) suggest that the data could be considered MCAR. Where the p value is significant (less than 0.05), the data can not be considered MCAR. The data will either be Missing at Random (MAR), or Missing Not at Random (MNAR).
+For datasets with very high levels of missing data the test may not be estimable and therefore no results is presented. P values that are not significant (greater than 0.05) suggest that the data could be considered MCAR. Where the p value is significant (less than 0.05), the data can not be considered MCAR. The data will either be Missing at Random (MAR), or Missing Not at Random (MNAR).
 
 
-# Regional level
+# **Regional level**
 
 The heatmaps show the level of missing data at a regional level (e.g. by river basin district) per month and per year (as percentage):
 
@@ -182,7 +198,7 @@ par(mar=c(4,4,4,4))
 layout(matrix(1:lay_n, ncol=2, byrow=TRUE))
 # Heatmaps
 for(i in 1:length(param$years)) {
-    plot_miss_heatmap(x=LSN_missing_rbd_pc[[i]][, .SD, .SDcols=LSN_wide_names[[i]]] |> as.matrix(), xlabs=format(ISOdate(2010,1:12, 1),"%b"), ylabs=LSN_missing_rbd_pc[[i]][, ea_rbd], title=paste0("Monthly (", param$years[i], ")"), lta=0.5)
+    plot_miss_heatmap(x=LSN_missing_rbd_percent[[i]][, .SD, .SDcols=LSN_wide_names[[i]]] |> as.matrix(), xlabs=format(ISOdate(2010,1:12, 1),"%b"), ylabs=LSN_missing_rbd_percent[[i]][, ea_rbd], title=paste0("Monthly (", param$years[i], ")"), lta=0.5)
 }
 ```
 
@@ -190,23 +206,23 @@ The mean level (%) of missing data per RBD per year is:
 
 ```{r}
 # Format table/results
-LSN_missing_rbd_yearly_mean <- lapply(LSN_missing_rbd_pc, \(x) round(x[, yearly_mean], 1)) |> do.call(cbind, args=_)
+LSN_missing_rbd_yearly_mean <- lapply(LSN_missing_rbd_percent, \(x) round(x[, yearly_mean], 1)) |> do.call(cbind, args=_)
 colnames(LSN_missing_rbd_yearly_mean) <- param$year
-LSN_missing_rbd_yearly_mean <- data.table(RBD = as.character(LSN_missing_rbd_pc[[1]][, ea_rbd]), LSN_missing_rbd_yearly_mean)
+LSN_missing_rbd_yearly_mean <- data.table(RBD = as.character(LSN_missing_rbd_percent[[1]][, ea_rbd]), LSN_missing_rbd_yearly_mean)
 # DT for pretty table
-LSN_missing_rbd_yearly_mean_dt <- DT::datatable(LSN_missing_rbd_yearly_mean, options = list(dom = 't', paging = FALSE, autoWidth = FALSE), rownames = FALSE, width = "auto")
+LSN_missing_rbd_yearly_mean_dt <- DT::datatable(LSN_missing_rbd_yearly_mean, options = list(dom = 't', paging = FALSE, autoWidth = TRUE), rownames = FALSE, width = "20")
 
 LSN_missing_rbd_yearly_mean_dt
 ```
 
-# Site level
+# **Site level**
 
 The maps show the level of missing data at a site level, with the number of missing months per site per year:
 
-```{r}
+```{r, results='hide'}
 ### Create SF objects to plot maps
 # Add geometry
-lapply(1:length(param$years), \(x) LSN_wide[[x]][LSN_sites_dt, geometry := i.geometry, on="network_id"])
+lapply(1:length(param$years), \(x) LSN_wide[[x]][LSN_sites_filtered, geometry := i.geometry, on="network_id"])
 # add percent missing data
 lapply(1:length(param$years), \(x) LSN_wide[[x]][, missing_count_pc := missing_count / 12 * 100])
 # Create sf object for plotting (total missing per year)
@@ -218,6 +234,7 @@ missing_cat <- lapply(1:length(param$years), \(x) apply(LSN_wide[[x]][, .SD, .SD
 for(i in 1:length(param$years)) { colnames(missing_cat[[i]]) <- months}
 # Add to sf
 LSN_wide_sf <- lapply(1:length(param$years), \(x) cbind(LSN_wide_sf[[x]], missing_cat[[x]]))
+
 ```
 
 
@@ -237,9 +254,10 @@ for(i in 1:length(param$years)) {
     plot(LSN_wide_sf[[i]]["missing_count"], pch=21, col="black", bg=mcols[[i]], add=TRUE)
     legend(x = par("usr")[2], y = mean(par("usr")[3:4]), legend=brks, pt.bg=lcol, pch=21, pt.cex=1.5, xpd = NA, bty = "n", yjust = 0.5)
 }
+
 ```
 
-## Missing data by site
+## **Missing data by site**
 
 The sites with the highest level of missing data are (only shows the first 20 rows):
 
