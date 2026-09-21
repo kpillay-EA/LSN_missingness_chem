@@ -74,9 +74,9 @@ library(lubridate)
 library(tidyr)
 # Run the code to process missing data
 
-source("../LSN_missingness_WIMS.R")
-source("../missing_data_plot_functions.r")
-source("../missing_data_functions.r")
+source("../Scripts/LSN_missingness_WIMS.R")
+source("../Scripts/missing_data_plot_functions.r")
+source("../Scripts/missing_data_functions.r")
 ```
 
 ## **Missing data per unique site**

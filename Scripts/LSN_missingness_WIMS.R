@@ -27,7 +27,7 @@ library(tidyr)
 library(here)
 
 # Load functions 
-source("/mnt/workbench/home/GKirthana.Pillay/LSN_missingness_wims/missing_data_functions.r")
+source("/mnt/workbench/home/GKirthana.Pillay/LSN_missingness_wims/Scripts/missing_data_functions.r")
 
 ### RSS/RSN/SSN data parameters
 #st= suite type/network here it is LS
