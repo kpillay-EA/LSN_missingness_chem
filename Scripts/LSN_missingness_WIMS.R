@@ -36,7 +36,7 @@ source("Scripts/missing_data_functions.r")
 #fnn = the name of the variable, used in file names and figures.
 #years = sampling years/which years to get missing data for
 
-param <- list(st="LS", dc="Ammoniacal Nitrogen, Filtered as N", fn="lsn_wims_", fnn="Nitrogen", years=2024:2025)
+#param <- list(st="LS", dc="Ammoniacal Nitrogen, Filtered as N", fn="lsn_wims_", fnn="Nitrogen", years=2024:2025)
 
 #establish connectioin to databricks
 
