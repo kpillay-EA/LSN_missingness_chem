@@ -27,16 +27,16 @@ library(tidyr)
 library(here)
 
 # Load functions 
-source("/mnt/workbench/home/GKirthana.Pillay/LSN_missingness_wims/Scripts/missing_data_functions.r")
+source("Scripts/missing_data_functions.r")
 
-### RSS/RSN/SSN data parameters
+### LSN data parameters
 #st= suite type/network here it is LS
 #dc= det_code but not included atm
 #fn = prefix for output file names
 #fnn = the name of the variable, used in file names and figures.
 #years = sampling years/which years to get missing data for
 
-#param <- list(st="LS", dc="Ammoniacal Nitrogen, Filtered as N", fn="lsn_wims_", fnn="Nitrogen", years=2024:2025)
+param <- list(st="LS", dc="Ammoniacal Nitrogen, Filtered as N", fn="lsn_wims_", fnn="Nitrogen", years=2024:2025)
 
 #establish connectioin to databricks
 
@@ -70,7 +70,8 @@ LSN_data_filtered <- LSN_data %>%
 LSN_sites <- dbGetQuery(con,
                         "SELECT * FROM prd_dash_lab.seda_unrestricted.ard_lsn_point_sites")
 
-#Select columns
+#Select columns, add distinct() as some sites are duplicated in the databricks input data
+
 LSN_sites_filtered <- LSN_sites %>%
   mutate(version_start = dmy(version_start)) %>%
   dplyr::select(
@@ -82,13 +83,13 @@ LSN_sites_filtered <- LSN_sites %>%
     replacement_site_flag,
     latitude_wgs_84,
     longitude_wgs_84,
-    version_start) %>%
+    version_start
+  ) %>%
   filter(
     startsWith(network_id, param$st),
-    year(version_start) %in% c(2024, 2025))
-# here version start are all 2024
-#here edit to only inlcude 2024 and 2025
-#only 2 records have been removed
+    year(version_start) %in% param$years
+    ) %>%
+  distinct()
 
 #For panel information extract required data from LSN_sites 
 #columns required
@@ -182,10 +183,6 @@ names(panel_table)[names(panel_table) == "panel"] <- "panel_name"
 # Get unique panel names
 panel <- panel_table[, panel_name] |> unique()
 
-#because i dont have current panel column, it is just panel and none of the sites have been rejected
-# Get sites for each panel
-LSN_panel_filtered <- lapply(panel,\(p) LSN_sites_filtered[panel == p, network_id])
-
 LSN_panel_filtered <- split(
   LSN_sites_filtered$network_id,
   LSN_sites_filtered$panel)
@@ -224,9 +221,10 @@ cols <- as.character(1:12)
 missing_cols <- lapply(LSN_wide, \(x) setdiff(cols, names(x[, -c(1:2)])))
 
 # Add any columns that are missing
-for(i in seq_along(years)) {
+for (i in 1:length(param$years)) {
   if(length(missing_cols[[i]]) > 0) {LSN_wide[[i]][, (missing_cols[[i]]) := as.numeric(NaN)]}
 }
+
 # Set months in correct order
 lapply(LSN_wide, \(x) setcolorder(x, c("network_id", "ea_rbd", cols)))
 
@@ -264,7 +262,11 @@ LSN_wide <- lapply(1:length(param$years), \(x) rbindlist(list(LSN_wide[[x]][extr
 # Table of sites
 LSN_sites_table <- cbind(year=param$years, original_design=unlist(lapply(LSN_sites_planned_year, nrow)), planned=unlist(lapply(LSN_wide, nrow)), sampled_at_least_once=sites_visited, planned_not_sampled=unlist(lapply(LSN_wide, nrow)) - unlist(sites_visited))
 
-# Change missing columns for SSN to 0 value
+# year original_design planned sampled_at_least_once planned_not_sampled
+# 2024 147             147     126                   21                 
+# 2025 146             146     138                   8        
+
+# Change missing columns for LSN to 0 value
 if(param$st=="LS" & param$years[1]==2024) {
   LSN_wide[[1]][, LSN_wide_names[[1]][1:3] := as.numeric(0)]
 }
@@ -283,16 +285,23 @@ LSN_missing_nat_percent <- lapply(1:length(param$years), \(x) LSN_missing_nat[[x
 # Total missing data per month
 LSN_missing_nat_totals <- rbindlist(LSN_missing_nat, use.names = FALSE) |> colSums() 
 names(LSN_missing_nat_totals) <- format(ISOdate(2010,1:12, 1),"%b")
+#LSN_missing_nat_totals
+#Jan Feb Mar Apr May Jun Jul Aug Sep Oct Nov Dec 
+#99  95  97  78  70  58  48  53  47  42  41  66 
 
 # as percentage %
 planned_sites <- LSN_sites_table[,2] |> unlist() |> sum()
 
 # FOR LSN, planned sites per month (since jan - mar was not done in 2024)
+#Exclude Jan-Mar 2024 planned sites from monthly denominator.
 if(param$st=="LS" & param$years[1]==2024) {
   planned_sites <- c(rep(planned_sites - unlist(LSN_sites_table[,2][1]), times=3), rep(planned_sites, times=9))}
 
 # Overall missing data per month
 LSN_missing_nat_totals_pc <- LSN_missing_nat_totals / planned_sites * 100
+# Jan      Feb      Mar      Apr      May      Jun      Jul      Aug      Sep      Oct      Nov      Dec 
+#67.80822 65.06849 66.43836 26.62116 23.89078 19.79522 16.38225 18.08874 16.04096 14.33447 13.99317 22.52560 
+
 
 ## Count number of missing data per month per RBD
 LSN_missing_rbd <- lapply(1:length(param$years), \(x) LSN_wide[[x]][, lapply(.SD, \(x) length(which(is.na(x)))), by=ea_rbd, .SDcols=LSN_wide_names[[x]]] |> setkey("ea_rbd"))
@@ -332,7 +341,7 @@ LSN_missing_all[LSN_sites_filtered, site_status := i.status, on="network_id"]
 # Format as table and write to file
 LSN_site_miss_table <- LSN_missing_all[, .(network_id, site_status, ea_rbd, n_years, missing_count, missing_count_pc)][order(missing_count_pc, decreasing = TRUE)]
 
+
 #write to a .csv file in outputs folder
 fwrite(LSN_site_miss_table, file=here("Outputs", paste0(param$fn, tolower(param$fnn), "_missing_data_", yr[1], "-", yr[2], ".csv")))
-
 
