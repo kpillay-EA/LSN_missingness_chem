@@ -1,5 +1,5 @@
 ---
-title: "**Missing Data Report - Water Quality - Dissolved Organic Carbon**"
+title: "**Missing Data Report - Water Quality - Nitrogen**"
 output:
   html_document:
     toc: true
@@ -11,7 +11,7 @@ output:
 
 This is a report for water quality with data stored in the WIMS table.
 
-?Set the parameters, and then run the report. The data will be pulled from the table on Databricks, and a report will be generated in the `docs` folder. ?Additionally, a `csv` file containing the missing data by site will be generated in the `outputs` folder.
+Set the parameters (param), and then run the report. The data will be pulled from the table on Databricks, and a report will be generated in the `docs` folder. Additionally, a `csv` file containing the missing data by site will be generated in the `outputs` folder.
 
 `st` = network, set to "LS"
 
@@ -30,7 +30,9 @@ knitr::opts_chunk$set(
   warning = FALSE,
   attr.source = ".numberLines")
 
-
+knitr::opts_knit$set(
+  root.dir = "/mnt/workbench/home/GKirthana.Pillay/LSN_missingness_wims"
+)
 
 #load required libraries
 library(brickster)
@@ -57,9 +59,9 @@ LSN_data <- dbGetQuery(con,
 ### Set and save the parameters to use for the report
 ### Select one, comment out the rest
 ## LSN:
-#param <- list(st="LS", dc="Ammoniacal Nitrogen, Filtered as N", fn="lsn_wims_", fnn="Nitrogen", years=2024:2025)
+param <- list(st="LS", dc="Ammoniacal Nitrogen, Filtered as N", fn="lsn_wims_", fnn="Nitrogen", years=2024:2025)
 #param <- list(st="LS", dc="Orthophosphate, Filtered as P", fn="lsn_wims_", fnn="Phosphate", years=2024:2025)
-param <- list(st="LS", dc="Carbon, Organic, Dissolved as C :- {DOC}", fn="lsn_wims_", fnn="DoC", years=2024:2025)	
+#param <- list(st="LS", dc="Carbon, Organic, Dissolved as C :- {DOC}", fn="lsn_wims_", fnn="DoC", years=2024:2025)	
 #param <- list(st="LS", dc="Temperature of Water", fn="lsn_wims_", fnn="Temperature", years=2024:2025)
 ```
 
@@ -74,14 +76,13 @@ library(lubridate)
 library(tidyr)
 # Run the code to process missing data
 
-source("../Scripts/LSN_missingness_WIMS.R")
-source("../Scripts/missing_data_plot_functions.r")
-source("../Scripts/missing_data_functions.r")
+source("Scripts/LSN_missingness_WIMS.R")
+source("Scripts/missing_data_plot_functions.r")
 ```
 
 ## **Missing data per unique site**
 
-Analysis of missing data for det desc: Carbon, Organic, Dissolved as C :- {DOC}, for the LSN network, which is sampled once per month.
+Analysis of missing data for det desc: Ammoniacal Nitrogen, Filtered as N, for the LSN network, which is sampled once per month.
 
 Missing data is determined using the variable: meas_result
 
@@ -268,8 +269,6 @@ sites_miss_dt
 ```
 
 A full table of results can be found in the `outputs` folder
-
-
 
 
 
