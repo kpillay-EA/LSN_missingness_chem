@@ -4,4 +4,5 @@ The reports are generated from the R Markdown analysis and are available below.
 
 ## Missing Data Reports
 
-[DoC Missing Data Report](LSN%20Missing%20Data%20Report%20DoC.html
+[LSN: Water Quality - Dissolved Organic Carbon](LSy%20-%20DoC.html
+``
