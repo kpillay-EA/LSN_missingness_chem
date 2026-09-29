@@ -1,5 +1,7 @@
 # LSN Missing Data Analysis Reports
 
+## View the published missing data analysis reports [here:] (https://kpillay-ea.github.io/LSN_missingness_chem/)
+
 The reports are generated from the R Markdown analysis and are available below.
 
 ## Missing Data Reports
@@ -13,6 +15,3 @@ The reports are generated from the R Markdown analysis and are available below.
 [LSN: Water Quality - Dissolved Organic Carbon](LSN%20Missing%20Data%20Report%20-%20Water%20Quality%20-%20DoC.html)
 
 
-## View the published missing data analysis reports here:
-
-https://kpillay-ea.github.io/LSN_missingness_chem/
