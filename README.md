@@ -36,5 +36,5 @@ years = "2024:2025"   # Set which years you want to analyse
 
 Little's MCAR test is run using a custom function found in the `missing_data_functions.r` script file. This is run in the `LSN_WIMS_missing_data_report.Rmd`. The test fails for some networks/variables which have high levels of missing data (e.g. missing entire periods).
 
-
+Reports are saved in `docs` folder
 
