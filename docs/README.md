@@ -1,6 +1,6 @@
 # LSN Missing Data Analysis Reports
 
-## View the published missing data analysis reports [here:] (https://kpillay-ea.github.io/LSN_missingness_chem/)
+## View the published missing data analysis reports [here:](https://kpillay-ea.github.io/LSN_missingness_chem/)
 
 The reports are generated from the R Markdown analysis and are available below.
 
