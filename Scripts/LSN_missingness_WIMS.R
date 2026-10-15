@@ -41,7 +41,6 @@ source("Scripts/missing_data_functions.r")
 
 #establish connectioin to databricks
 
-warehouses <- db_sql_warehouse_list()
 
 con <- dbConnect(
   drv = DatabricksSQL(),
@@ -49,21 +48,10 @@ con <- dbConnect(
   catalog = "prd_dash_lab")
 
 #SQL code here to import the relevant dataset from databricks
-LSN_data <- dbGetQuery(con,
-                       "SELECT * FROM prd_dash_lab.seda_unrestricted.ard_lsn_tbl_sample_wims")
-
-#Filter the data based on network id (but since this network is Lakes only it should be okay)
-LSN_data_filtered <- LSN_data %>%
-  filter(
-    startsWith(suite_type, param$st),
-    det_desc == param$dc) %>%
-  dplyr::select(
-    suite_type,
-    det_desc,
-    network_id,
-    sample_datetime,
-    meas_sign,
-    meas_result)
+LSN_data <- dbGetQuery(con, paste0("SELECT network_id, sample_datetime, meas_sign, meas_result 
+FROM prd_dash_lab.seda_restricted.rss_tbl_samp_wims
+WHERE suite_type = '", param$st,
+"' AND det_desc =", param$dc))
 
 
 ## Site data
@@ -73,24 +61,10 @@ LSN_sites <- dbGetQuery(con,
 
 #Select columns, add distinct() as some sites are duplicated in the databricks input data
 
-LSN_sites_filtered <- LSN_sites %>%
-  mutate(version_start = dmy(version_start)) %>%
-  dplyr::select(
-    network_id,
-    original_or_oversample,
-    panel,
-    site_commenced,
-    status,
-    replacement_site_flag,
-    latitude_wgs_84,
-    longitude_wgs_84,
-    version_start
-  ) %>%
-  filter(
-    startsWith(network_id, param$st),
-    year(version_start) %in% param$years
-    ) %>%
-  distinct()
+LSN_sites <- dbGetQuery(con, paste0("SELECT network_id, original_or_oversample, panel, site_commenced, status, replacement_site_flag, latitude_wgs_84, longitude_wgs_84, version_start
+FROM prd_dash_lab.seda_unrestricted.ard_lsn_point_sites
+WHERE network_id LIKE '", param$st, "%' 
+AND YEAR(version_start) IN (", paste(param$design_years, collapse=", "), ")"))
 
 #For panel information extract required data from LSN_sites 
 #columns required
