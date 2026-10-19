@@ -29,7 +29,6 @@ library(here)
 # Load functions 
 source("Scripts/missing_data_functions.r")
 
-
 ### LSN data parameters
 #st= suite type/network here it is LS
 #dc= det_code but not included atm
@@ -37,65 +36,48 @@ source("Scripts/missing_data_functions.r")
 #fnn = the name of the variable, used in file names and figures.
 #years = sampling years/which years to get missing data for
 
-#param <- list(st="LS", dc="Ammoniacal Nitrogen, Filtered as N", fn="lsn_wims_", fnn="Nitrogen", years=2024:2025)
+param <- list(st="LS", dc="Ammoniacal Nitrogen, Filtered as N", fn="lsn_wims_", fnn="Nitrogen", years=2024:2025)
 
 #establish connectioin to databricks
-
-warehouses <- db_sql_warehouse_list()
-
 con <- dbConnect(
   drv = DatabricksSQL(),
   warehouse_id = "0a86ae40313bb7db",
   catalog = "prd_dash_lab")
 
 #SQL code here to import the relevant dataset from databricks
-LSN_data <- dbGetQuery(con,
-                       "SELECT * FROM prd_dash_lab.seda_unrestricted.ard_lsn_tbl_sample_wims")
-
+#LSN_data <- dbGetQuery(con,
+#                       "SELECT * FROM prd_dash_lab.seda_unrestricted.ard_lsn_tbl_sample_wims")
 #Filter the data based on network id (but since this network is Lakes only it should be okay)
-LSN_data_filtered <- LSN_data %>%
-  filter(
-    startsWith(suite_type, param$st),
-    det_desc == param$dc) %>%
-  dplyr::select(
-    suite_type,
-    det_desc,
-    network_id,
-    sample_datetime,
-    meas_sign,
-    meas_result)
+#dplyr way
+#LSN_data_filtered <- LSN_data %>%
+#  filter( startsWith(suite_type, param$st), det_desc == param$dc) %>%
+#  dplyr::select( suite_type, det_desc, network_id, sample_datetime, meas_sign, meas_result)
 
+#SQL method
+LSN_data <- dbGetQuery(
+  con,
+  paste0("SELECT suite_type, det_desc, network_id, sample_datetime, meas_sign, meas_result
+     FROM prd_dash_lab.seda_unrestricted.ard_lsn_tbl_sample_wims
+     WHERE suite_type LIKE '", param$st, "%'
+       AND det_desc = '", param$dc, "'"))
 
 ## Site data
 # Load sites, match on design year
 LSN_sites <- dbGetQuery(con,
-                        "SELECT * FROM prd_dash_lab.seda_unrestricted.ard_lsn_point_sites")
+                       "SELECT * FROM prd_dash_lab.seda_unrestricted.ard_lsn_point_sites")
 
 #Select columns, add distinct() as some sites are duplicated in the databricks input data
-
 LSN_sites_filtered <- LSN_sites %>%
   mutate(version_start = dmy(version_start)) %>%
   dplyr::select(
-    network_id,
-    original_or_oversample,
-    panel,
-    site_commenced,
-    status,
-    replacement_site_flag,
-    latitude_wgs_84,
-    longitude_wgs_84,
-    version_start
-  ) %>%
-  filter(
-    startsWith(network_id, param$st),
-    year(version_start) %in% param$years
-    ) %>%
-  distinct()
+    network_id,original_or_oversample, panel,site_commenced,status,replacement_site_flag,latitude_wgs_84,longitude_wgs_84,version_start) %>%
+  filter(startsWith(network_id, param$st),year(version_start) %in% param$years) %>%
+ distinct()
 
 #For panel information extract required data from LSN_sites 
 #columns required
 
-LSN_panel<- LSN_sites %>%
+LSN_panel <- LSN_sites %>%
   dplyr::select(network_id,
                 panel,
                 version_start,
@@ -184,6 +166,10 @@ names(panel_table)[names(panel_table) == "panel"] <- "panel_name"
 # Get unique panel names
 panel <- panel_table[, panel_name] |> unique()
 
+#because i dont have current panel column, it is just panel and none of the sites have been rejected
+# Get sites for each panel
+#LSN_panel_filtered <- lapply(panel,\(p) LSN_sites_filtered[panel == p, network_id])
+
 LSN_panel_filtered <- split(
   LSN_sites_filtered$network_id,
   LSN_sites_filtered$panel)
@@ -225,7 +211,6 @@ missing_cols <- lapply(LSN_wide, \(x) setdiff(cols, names(x[, -c(1:2)])))
 for (i in 1:length(param$years)) {
   if(length(missing_cols[[i]]) > 0) {LSN_wide[[i]][, (missing_cols[[i]]) := as.numeric(NaN)]}
 }
-
 # Set months in correct order
 lapply(LSN_wide, \(x) setcolorder(x, c("network_id", "ea_rbd", cols)))
 
@@ -290,6 +275,7 @@ names(LSN_missing_nat_totals) <- format(ISOdate(2010,1:12, 1),"%b")
 #Jan Feb Mar Apr May Jun Jul Aug Sep Oct Nov Dec 
 #99  95  97  78  70  58  48  53  47  42  41  66 
 
+
 # as percentage %
 planned_sites <- LSN_sites_table[,2] |> unlist() |> sum()
 
@@ -344,5 +330,6 @@ LSN_site_miss_table <- LSN_missing_all[, .(network_id, site_status, ea_rbd, n_ye
 
 
 #write to a .csv file in outputs folder
-fwrite(LSN_site_miss_table, file=here("Outputs", paste0(param$fn, tolower(param$fnn), "_missing_data_", yr[1], "-", yr[2], ".csv")))
+fwrite(LSN_site_miss_table, file=here("Outputs", paste0(param$fn, tolower(param$fnn), "_missing_data_trial", yr[1], "-", yr[2], ".csv")))
+
 
