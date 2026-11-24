@@ -17,12 +17,12 @@ The reports are generated from the R Markdown analysis and are available below.
 
 ####Updated reports
 
-[LSN: Water Quality - Nitrogen]()
+[LSN: Water Quality - Nitrogen](LSN%20Missing%20Data%20Report%20-%20Water%20Quality%20-%20Nitrogen%20-%20updated.html)
 
-[LSN: Water Quality - Phosphate]()
+[LSN: Water Quality - Phosphate](LSN%20Missing%20Data%20Report%20-%20Water%20Quality%20-%20Orthophosphate_updated.html)
 
 [LSN: Water Quality - Temperature](LSN%20Missing%20Data%20Report%20-%20Water%20Quality%20-%20Temperature_updated.html)
 
-[LSN: Water Quality - Dissolved Organic Carbon]()
+[LSN: Water Quality - Dissolved Organic Carbon](LSN%20Missing%20Data%20Report%20-%20Water%20Quality%20-%20DoC_updated%20.html)
 
 
